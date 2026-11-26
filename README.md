@@ -15,13 +15,15 @@ python main.py                       # 打开窗口，编辑应用或选择自�
 
 `--daily` 接受 `--history` 列出的应用 ID，也接受唯一匹配的显示名称或 CC 应用标识。查询包含明细和按日归档的用量。日期为空表示当前数据库中没有该来源的计量记录。
 
+点窗口右上角的 **×** 可将助手收进 Windows 系统托盘，已启用的自动同步会继续。单击托盘图标可恢复窗口，右键可选择「退出助手」。
+
 命令默认使用当前用户的助手配置，可加 `--config <配置文件路径>` 指定其他配置。源码命令默认向终端输出 JSON，也可加 `--result <文件路径>` 保存为 UTF-8。打包的窗口版 EXE 使用相同参数，命令行运行时请指定结果文件。
 
 ## 项目文件
 
 | 文件 | 内容 |
 | --- | --- |
-| `main.py`、`bridge_ui.py` | 命令行和窗口入口 |
+| `main.py`、`bridge_ui.py`、`bridge_tray.py` | 命令行、窗口和 Windows 托盘入口 |
 | `bridge_app.py`、`desktop_presets.py` | 配置、默认目录、可用的扫描器 |
 | `bridge_scan.py` | CodeBuddy IDE 日志和自定义扫描脚本的执行入口 |
 | `codebuddy_archive.py`、`codebuddy_rollup.py` | 读取桌面历史回合，将逐条日志尚未覆盖的用量写入 CC 按日汇总 |
@@ -38,7 +40,7 @@ python main.py                       # 打开窗口，编辑应用或选择自�
 ```powershell
 python -m unittest discover -s tests -v
 python -m pip install PyInstaller==6.22.3
-python -m PyInstaller --onefile --windowed --noupx --name CC用量助手 main.py
+python -m PyInstaller --onefile --windowed --noupx --icon usage.ico --add-data "usage.ico:." --name CC用量助手 main.py
 ```
 
 运行测试只需要 Python。打包命令在 `dist` 下生成 EXE。修改源码后可以直接用 `python main.py` 运行新版，桌面快捷方式使用的是另行安装的 EXE。

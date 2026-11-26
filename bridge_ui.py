@@ -3,6 +3,7 @@
 import copy
 import queue
 import sqlite3
+import sys
 import threading
 import tkinter as tk
 from datetime import datetime
@@ -12,6 +13,9 @@ from tkinter import filedialog, messagebox, ttk
 import bridge_app
 from bridge_history import read_history
 from desktop_presets import can_sync, source_note
+
+if sys.platform == "win32":
+    from bridge_tray import ICON_PATH, WindowsTray
 
 
 BG = "#f4f6f9"
@@ -145,6 +149,8 @@ class BridgeWindow:
         self.messages = queue.Queue()
         self.running = False
         self.closing = False
+        self.tray = None
+        self.restore_state = "normal"
         self.last_status = {}
         self.results = {}
         self.history = {}
@@ -230,7 +236,36 @@ class BridgeWindow:
         ttk.Button(database, text="退出助手", command=self.exit_app).grid(row=0, column=3, padx=(12, 0))
         self.fill_tree()
         self.schedule_auto()
-        root.protocol("WM_DELETE_WINDOW", root.iconify)
+        if sys.platform == "win32":
+            if ICON_PATH.is_file():
+                root.iconbitmap(default=str(ICON_PATH))
+            self.tray = WindowsTray(root, self.restore_window, self.exit_app)
+            root.bind("<Destroy>", self.on_destroy, add="+")
+        root.protocol("WM_DELETE_WINDOW", self.hide_to_tray)
+
+    def hide_to_tray(self):
+        if self.closing or self.root.state() == "withdrawn":
+            return
+        if self.tray is None or not self.tray.show():
+            # Keep a taskbar entry if Explorer cannot host the tray icon.
+            self.root.iconify()
+            return
+        self.restore_state = "zoomed" if self.root.state() == "zoomed" else "normal"
+        self.root.withdraw()
+
+    def restore_window(self):
+        if self.closing:
+            return
+        self.root.deiconify()
+        if self.restore_state == "zoomed":
+            self.root.state("zoomed")
+        self.root.lift()
+        self.root.focus_force()
+        self.tray.hide()
+
+    def on_destroy(self, event):
+        if event.widget is self.root:
+            self.tray.close()
 
     def selected(self):
         selected = self.tree.selection()
@@ -453,7 +488,11 @@ class BridgeWindow:
             self.root.after(100, self.poll)
 
     def exit_app(self):
+        if self.closing:
+            return
         self.closing = True
+        if self.tray is not None:
+            self.tray.close()
         self.schedule_auto()
         if self.running:
             self.root.withdraw()
