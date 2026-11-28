@@ -28,7 +28,7 @@ RECEIPT_COLUMNS = {
 def _check_schema(db, archive=False):
     version = db.execute("PRAGMA main.user_version").fetchone()[0]
     if version < 28:
-        raise ValueError(f"CC 数据库版本为 {version}，同步需要兼容 CC Switch 4.0.42 的数据库。")
+        raise ValueError(f"CC 数据库版本为 {version}，同步需要兼容当前 CC Switch 数据库结构。")
     tables = [
         ("proxy_request_logs", REQUEST_COLUMNS, ("request_id",)),
         ("session_usage_dedup", RECEIPT_COLUMNS, ("data_source", "request_id")),

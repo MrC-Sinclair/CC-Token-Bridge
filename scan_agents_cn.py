@@ -1,4 +1,4 @@
-"""Read the dedicated local usage tables in Marvis and ZCode desktop."""
+"""Read the dedicated local usage table in the Marvis desktop app."""
 
 import hashlib
 import sqlite3
@@ -42,38 +42,3 @@ def scan_marvis(root):
             yield dict(id=ident, timestamp=int(datetime.fromisoformat(stamp).timestamp()),
                        model=model or "unknown", input=prompt - cached, output=output,
                        cache_read=cached, cache_write=0)
-
-
-def _zcode_split(prompt, output, reasoning, cached, written, total):
-    # model_usage includes a provider/computed total. Provider adapters may
-    # report inclusive or separate cache/reasoning amounts. Require an exact
-    # reconciliation before writing either split to CC.
-    _counts(prompt, output, reasoning, cached, written, total)
-    cache = cached + written
-    if prompt >= cache and prompt + output == total and reasoning <= output:
-        return prompt - cache, output
-    candidates = {
-        (fresh, completion)
-        for fresh in (prompt - cache, prompt)
-        for completion in (output, output + reasoning)
-        if fresh >= 0 and completion >= reasoning and fresh + cache + completion == total
-    }
-    if len(candidates) != 1:
-        raise ValueError("ZCode 的用量总数与输入、输出或缓存分类无法核对。")
-    return candidates.pop()
-
-
-def scan_zcode(root):
-    with _usage_db(root, "db.sqlite", "ZCode") as db:
-        for row in db.execute("""
-            SELECT id, completed_at, model_id, input_tokens, output_tokens,
-                   reasoning_tokens, cache_read_input_tokens, cache_creation_input_tokens,
-                   COALESCE(provider_total_tokens, computed_total_tokens)
-            FROM model_usage
-            WHERE completed_at IS NOT NULL AND status IN ('completed','error','cancelled')
-        """):
-            ident, stamp_ms, model, prompt, output, reasoning, cached, written, total = row
-            fresh, completion = _zcode_split(prompt, output, reasoning, cached, written, total)
-            if total:
-                yield dict(id=ident, timestamp=stamp_ms // 1000, model=model or "unknown",
-                           input=fresh, output=completion, cache_read=cached, cache_write=written)

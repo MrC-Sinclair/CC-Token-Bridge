@@ -22,7 +22,7 @@ class DesktopSourcesTest(unittest.TestCase):
             bridge_app.save_config(old, location)
             with patch.object(bridge_app, "config_path", return_value=location):
                 config = bridge_app.load_config()
-                self.assertEqual(len(config["sources"]), 6)
+                self.assertEqual(len(config["sources"]), len(desktop_sources()))
                 self.assertEqual(config["sources"][0], custom)
                 self.assertEqual(config["db_path"], old["db_path"])
                 self.assertIs(config["auto_sync"], True)
@@ -32,6 +32,24 @@ class DesktopSourcesTest(unittest.TestCase):
                 self.assertEqual(bridge_app.load_config(), config)
             bridge_app.save_config(old, location)
             self.assertEqual(bridge_app.load_config(location), old)
+
+    def test_config_drops_unavailable_presets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            location = Path(directory) / "config.json"
+            old = bridge_app.default_config()
+            old["desktop_presets_version"] = 1
+            old["sources"].append(dict(id="zcode", preset="zcode", kind="desktop", name="ZCode",
+                                       app_type="ZCode", root=str(Path(directory) / ".zcode"),
+                                       script=""))
+            location.write_text(json.dumps(old, ensure_ascii=False), encoding="utf-8")
+            with patch.object(bridge_app, "config_path", return_value=location):
+                config = bridge_app.load_config()
+            self.assertFalse(any(s.get("preset") == "zcode" for s in config["sources"]))
+            self.assertEqual(len(config["sources"]), 1 + len(desktop_sources()))
+            self.assertEqual(config["desktop_presets_version"], bridge_app.PRESETS_VERSION)
+            self.assertEqual(json.loads(location.read_text(encoding="utf-8")), config)
+            self.assertFalse(any(s.get("preset") == "zcode"
+                                 for s in bridge_app.load_config(location)["sources"]))
 
     def test_pending_sources_activate_with_an_explicit_scanner(self):
         for source in desktop_sources():

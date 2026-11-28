@@ -9,7 +9,10 @@ from pathlib import Path
 from bridge_db import import_rows
 from bridge_scan import codebuddy_history_root, scan
 from codebuddy_archive import scan_codebuddy_archive
-from desktop_presets import DESKTOP_APPS, desktop_sources
+from desktop_presets import DESKTOP_APPS, REMOVED_PRESETS, desktop_sources
+
+
+PRESETS_VERSION = 2
 
 
 def local_app_data():
@@ -44,7 +47,7 @@ def default_config():
     source = dict(id="codebuddy-ide", kind="codebuddy", name="CodeBuddy IDE",
                   app_type="codebuddy", root=str(logs), script="")
     return dict(db_path=str(default_db_path()), sources=[source, *desktop_sources()],
-                auto_sync=False, desktop_presets_version=1)
+                auto_sync=False, desktop_presets_version=PRESETS_VERSION)
 
 
 def config_path():
@@ -99,13 +102,25 @@ def load_config(path=None):
     if path is None and not location.exists():
         return default_config()
     try:
-        config = _validate(json.loads(location.read_text(encoding="utf-8-sig")))
+        config = json.loads(location.read_text(encoding="utf-8-sig"))
+        changed = False
+        if isinstance(config, dict) and isinstance(config.get("sources"), list):
+            kept = [s for s in config["sources"]
+                    if not (isinstance(s, dict) and s.get("preset") in REMOVED_PRESETS)]
+            if len(kept) != len(config["sources"]):
+                config["sources"] = kept
+                changed = True
+        config = _validate(config)
         if path is None and "desktop_presets_version" not in config:
             existing = {s["app_type"].casefold() for s in config["sources"]}
             known_ids = {s["id"] for s in config["sources"]}
             config["sources"].extend(s for s in desktop_sources() if s["id"] not in known_ids
                                      and s["app_type"].casefold() not in existing)
-            config["desktop_presets_version"] = 1
+            changed = True
+        if path is None and config.get("desktop_presets_version") != PRESETS_VERSION:
+            config["desktop_presets_version"] = PRESETS_VERSION
+            changed = True
+        if changed and path is None:
             save_config(config, location)
         return config
     except (ValueError, OSError) as exc:

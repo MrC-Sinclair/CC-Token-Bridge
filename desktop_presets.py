@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from scan_agents_cn import scan_marvis, scan_zcode
+from scan_agents_cn import scan_marvis
 from scan_office_cn import scan_qianwen
 from scan_coding_cn import scan_qoder
 
@@ -17,11 +17,12 @@ DESKTOP_APPS = {
     "doubao": ("豆包", Path(os.environ.get("LOCALAPPDATA") or HOME / "AppData" / "Local") / "Doubao" / "User Data", "可在豆包「设置 → 订阅与额度管理」查看额度。可读日志和任务轨迹中尚未找到实际 Token。"),
     "qianwen-office": ("千问办公", HOME / ".qwenworkcn" / "logs", "已完成调用有正数 Token 时可同步。本机内置服务的这些字段均为 0。企业自有模型的用量可在对应服务商查看。"),
     "qoder-cn": ("Qoder CN", HOME / ".qoder-cn" / "projects", "仅计入带有明确 Token 数的调用。本机已核对到上下文压缩用量，普通聊天还会记录积分。"),
-    "zcode": ("ZCode", HOME / ".zcode" / "cli" / "db", "读取本机 ZCode 的 model_usage 表，计入已结束且报告正数 Token 的调用。"),
 }
 
-ADAPTERS = {"marvis": scan_marvis, "qianwen-office": scan_qianwen, "qoder-cn": scan_qoder,
-            "zcode": scan_zcode}
+ADAPTERS = {"marvis": scan_marvis, "qianwen-office": scan_qianwen, "qoder-cn": scan_qoder}
+
+# Presets the helper does not offer.
+REMOVED_PRESETS = frozenset({"zcode"})
 
 
 def desktop_sources():

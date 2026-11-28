@@ -1,6 +1,6 @@
 # CC 用量助手
 
-这是配合官方 CC Switch 使用的独立 Windows 工具。它从本机应用的日志和数据库读取模型调用，按请求 ID 去重，将可核对的 Token 写入 CC 的用量统计。当前写入格式已在 CC Switch 4.0.42 上验证。
+这是配合官方 CC Switch 使用的独立 Windows 工具。它从本机应用的日志和数据库读取模型调用，按请求 ID 去重，将可核对的 Token 写入 CC 的用量统计。ZCode 用量由官方 CC Switch 管理，助手不重复导入。
 
 ## 运行
 
@@ -28,7 +28,7 @@ python main.py                       # 打开窗口，编辑应用或选择自�
 | `bridge_scan.py` | CodeBuddy IDE 日志和自定义扫描脚本的执行入口 |
 | `codebuddy_archive.py`、`codebuddy_rollup.py` | 读取桌面历史回合，将逐条日志尚未覆盖的用量写入 CC 按日汇总 |
 | `scan_coding_cn.py` | Qoder CN 会话扫描 |
-| `scan_agents_cn.py` | ZCode 和 Marvis 用量表解析 |
+| `scan_agents_cn.py` | Marvis 用量表解析 |
 | `scan_office_cn.py` | 千问办公完成事件解析 |
 | `bridge_db.py`、`bridge_history.py` | CC 写入去重、累计与按日查询 |
 | `examples/`、`tests/` | 自定义扫描器模板和回归测试 |
